@@ -1,0 +1,31 @@
+deployAs:
+  - name: service
+    applicationType: service
+    endpoint: /service
+    scripts:
+      postDeploy: npm install && npm run connector:post-deploy
+      preUndeploy: npm install && npm run connector:pre-undeploy
+    configuration:
+      standardConfiguration:
+        - key: CTP_PROJECT_KEY
+          description: Project key of the commercetools Composable Commerce Project
+          required: true
+        - key: CTP_AUTH_URL
+          description: Authentication URL of the commercetools Composable Commerce Project
+          required: true
+        - key: CTP_API_URL
+          description: API URL of the commercetools Composable Commerce Project
+          required: true
+        - key: CTP_SCOPES
+          description: Space-separated scopes of an API Client
+          required: true
+      securedConfiguration:
+        - key: CTP_CLIENT_ID
+          description: client_id of an API Client
+          required: true
+        - key: CTP_CLIENT_SECRET
+          description: secret of an API Client
+          required: true
+        - key: EXTENSION_AUTH_SECRET
+          description: Shared secret commercetools sends in the Authorization header when calling this service's API Extension
+          required: true
