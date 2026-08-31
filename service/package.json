@@ -4,6 +4,9 @@
   "private": true,
   "description": "commercetools Connect service implementing a Cart create API Extension for validation",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "start": "node dist/index.js",
     "start:dev": "tsx watch src/index.ts",
@@ -23,6 +26,6 @@
     "@types/supertest": "^7.2.1",
     "supertest": "^7.2.2",
     "tsx": "^4.16.2",
-    "vitest": "^2.0.3"
+    "vitest": "^4.1.11"
   }
 }
