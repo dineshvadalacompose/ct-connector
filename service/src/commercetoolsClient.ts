@@ -103,3 +103,46 @@ export async function registerExtension(publicUrl: string, authSecret: string): 
 
   console.log('Extension updated');
 }
+
+export async function deregisterExtension(): Promise<void> {
+  const apiUrl = requireEnv('CTP_API_URL');
+  const projectKey = requireEnv('CTP_PROJECT_KEY');
+
+  const token = await getAccessToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+
+  const extensionUrl = `${apiUrl}/${projectKey}/extensions/key=${EXTENSION_KEY}`;
+  const getResponse = await fetch(extensionUrl, { method: 'GET', headers });
+
+  if (getResponse.status === 404) {
+    console.log('Extension already absent, nothing to do');
+    return;
+  }
+
+  if (!getResponse.ok) {
+    const body = await getResponse.text();
+    throw new Error(`Failed to fetch existing extension: ${getResponse.status} ${body}`);
+  }
+
+  const existing = (await getResponse.json()) as { version: number };
+
+  const deleteResponse = await fetch(`${extensionUrl}?version=${existing.version}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (deleteResponse.status === 404) {
+    console.log('Extension already absent, nothing to do');
+    return;
+  }
+
+  if (!deleteResponse.ok) {
+    const body = await deleteResponse.text();
+    throw new Error(`Failed to delete extension: ${deleteResponse.status} ${body}`);
+  }
+
+  console.log('Extension deleted');
+}

@@ -23,6 +23,20 @@ npm test
 
 ## Connecting this to a real commercetools project
 
+When commercetools Connect deploys this service for real (not local dev), the deployment gets
+assigned its own public URL, which is shown on the deployment's Overview screen. commercetools
+Connect does not automatically know this URL ahead of time, so it has to be entered once, by
+hand, into the deployment's configuration under the key `SERVICE_PUBLIC_URL`. From then on, every
+time this service is deployed or redeployed, it registers itself automatically - no manual step
+needed - via the `connector:post-deploy` script, which runs after `postDeploy` in `connect.yaml`.
+
+If this deployment is ever removed, `connector:pre-undeploy` automatically cleans up that same
+registration first, so the real commercetools project is never left trying to call a URL that no
+longer exists whenever someone creates a cart.
+
+This is different from the `register-extension` script described below, which is only for testing
+on your own machine with a temporary tunnel URL.
+
 The `POST /service` endpoint requires every request to carry an `Authorization` header matching
 the `EXTENSION_AUTH_SECRET` value in `.env` - this stops anyone else who finds the URL from
 pretending to be commercetools. The health check routes (`GET /` and `GET /service`) don't require

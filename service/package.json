@@ -12,8 +12,8 @@
     "start:dev": "tsx watch src/index.ts",
     "build": "tsc",
     "test": "vitest run",
-    "connector:post-deploy": "echo \"post-deploy: nothing to do\"",
-    "connector:pre-undeploy": "echo \"pre-undeploy: nothing to do\"",
+    "connector:post-deploy": "node --import tsx scripts/post-deploy-register.ts",
+    "connector:pre-undeploy": "node --import tsx scripts/pre-undeploy-deregister.ts",
     "register-extension": "node --env-file=.env --import tsx scripts/register-extension.ts"
   },
   "dependencies": {
