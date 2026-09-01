@@ -37,8 +37,9 @@ app.post('/service', (req: Request, res: Response) => {
     // For Create actions the resource representation is the draft, so lineItems may be
     // directly on resource.obj or on resource itself depending on resource type.
     const lineItems = resource?.obj?.lineItems ?? resource?.lineItems ?? [];
+    const customLineItems = resource?.obj?.customLineItems ?? resource?.customLineItems ?? [];
 
-    const result = validateCart(lineItems);
+    const result = validateCart(lineItems, customLineItems);
 
     if (!result.valid) {
       return res.status(400).json({

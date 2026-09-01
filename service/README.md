@@ -1,8 +1,8 @@
 # ct-connector service
 
 A minimal commercetools Connect service that implements a Cart create API Extension. When a
-shopping cart is created, this service checks each line item and rejects the cart if any single
-item has a quantity greater than 20 units.
+shopping cart is created, this service checks each line item (including custom line items) and
+rejects the cart if any single item has a quantity greater than 20 units.
 
 ## Run it locally
 

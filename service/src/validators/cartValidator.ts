@@ -8,11 +8,16 @@ export interface ValidationResult {
 }
 
 /**
- * Validates a cart's line items.
- * Rule: no single line item may have a quantity greater than 20 units.
+ * Validates a cart's line items and custom line items.
+ * Rule: no single item (regular or custom) may have a quantity greater than 20 units.
  */
-export function validateCart(lineItems: LineItemQuantity[]): ValidationResult {
-  const hasExcessiveQuantity = lineItems.some((item) => item.quantity > 20);
+export function validateCart(
+  lineItems: LineItemQuantity[],
+  customLineItems: LineItemQuantity[] = []
+): ValidationResult {
+  const hasExcessiveQuantity = [...lineItems, ...customLineItems].some(
+    (item) => item.quantity > 20
+  );
 
   if (hasExcessiveQuantity) {
     return {
