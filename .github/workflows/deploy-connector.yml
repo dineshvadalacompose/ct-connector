@@ -67,9 +67,13 @@ jobs:
         env:
           CTP_CLIENT_ID: ${{ secrets.CTP_CLIENT_ID }}
           CTP_CLIENT_SECRET: ${{ secrets.CTP_CLIENT_SECRET }}
-          CTP_SCOPES: ${{ secrets.CTP_SCOPES }}
           EXTENSION_AUTH_SECRET: ${{ secrets.EXTENSION_AUTH_SECRET }}
           SERVICE_PUBLIC_URL: ${{ secrets.SERVICE_PUBLIC_URL }}
+        # CTP_SCOPES is deliberately NOT passed here: the commercetools CLI's own
+        # --configuration value parser rejects any value containing a space
+        # (/^[^\s]+$/ in @commercetools/cli-topic-connect's config-value-flag.parser.js),
+        # and scope strings are inherently space-separated. Scopes don't change between
+        # deploys anyway, so the value already stored on the deployment is left as-is.
         run: |
           commercetools connect deployment redeploy \
             --id "$CT_DEPLOYMENT_ID" \
@@ -77,7 +81,6 @@ jobs:
             --configuration "service.CTP_PROJECT_KEY=$CTP_PROJECT_KEY" \
             --configuration "service.CTP_AUTH_URL=$CTP_AUTH_URL" \
             --configuration "service.CTP_API_URL=$CTP_API_URL" \
-            --configuration "service.CTP_SCOPES=$CTP_SCOPES" \
             --configuration "service.SERVICE_PUBLIC_URL=$SERVICE_PUBLIC_URL" \
             --configuration "service.CTP_CLIENT_ID=$CTP_CLIENT_ID" \
             --configuration "service.CTP_CLIENT_SECRET=$CTP_CLIENT_SECRET" \
