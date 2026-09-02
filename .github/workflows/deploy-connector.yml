@@ -1,0 +1,88 @@
+name: deploy-connector
+
+# Automates what we were doing by hand in Merchant Center: whenever a new version tag is
+# pushed, tell commercetools Connect to publish that code and update the running deployment
+# to use it. This replaces manual clicking-through-Merchant-Center for every code change.
+#
+# Two identities are used, on purpose:
+#   - CT_CLI_* : a dedicated API client, scoped only for managing Connect connectors/deployments.
+#     It never touches the actual commercetools project data (carts, orders, extensions).
+#   - CTP_*, EXTENSION_AUTH_SECRET, SERVICE_PUBLIC_URL : the values the deployed service itself
+#     needs to run (same ones already used for local/manual deploys), passed through so the
+#     redeploy step can keep the running deployment correctly configured.
+#
+# CONNECTOR_ID and DEPLOYMENT_ID identify this specific connector/deployment in this specific
+# commercetools project. Neither is sensitive (they're not credentials), so they're plain values
+# here rather than GitHub secrets. This connector and deployment currently have no "key" set
+# (only an id), so every CLI call below targets them by --id.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CT_REGION: australia-southeast1.gcp
+  CT_CONNECTOR_ID: a2338975-16d5-471c-ae97-b3cdf1ac69b4
+  CT_DEPLOYMENT_ID: f0a7c1e2-98d5-4a4d-97a6-1206c117ed80
+  CTP_PROJECT_KEY: ct-connector
+  CTP_AUTH_URL: https://auth.australia-southeast1.gcp.commercetools.com
+  CTP_API_URL: https://api.australia-southeast1.gcp.commercetools.com
+
+jobs:
+  publish-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install commercetools CLI
+        # Pinned: @commercetools/cli is still a 0.0.x package, so a new version should be picked
+        # up deliberately, not silently on the next run.
+        run: npm install -g @commercetools/cli@0.0.23
+
+      - name: Authenticate the CLI
+        env:
+          CT_CLI_CLIENT_ID: ${{ secrets.CT_CLI_CLIENT_ID }}
+          CT_CLI_CLIENT_SECRET: ${{ secrets.CT_CLI_CLIENT_SECRET }}
+          CT_CLI_SCOPES: ${{ secrets.CT_CLI_SCOPES }}
+        run: |
+          commercetools auth login --client-credentials \
+            --client-id "$CT_CLI_CLIENT_ID" \
+            --client-secret "$CT_CLI_CLIENT_SECRET" \
+            --region "$CT_REGION" \
+            --project-key "$CTP_PROJECT_KEY" \
+            --scope "$CT_CLI_SCOPES"
+
+      - name: Point the connector at this tag
+        run: |
+          commercetools connect connectorstaged update \
+            --id "$CT_CONNECTOR_ID" \
+            --repository-tag "${{ github.ref_name }}"
+
+      - name: Publish the connector
+        # Fails the job if publishing errors out — never proceeds to redeploy on doubt about
+        # whether the new code actually published successfully.
+        run: |
+          commercetools connect connectorstaged publish --id "$CT_CONNECTOR_ID"
+
+      - name: Redeploy with the newly published version
+        env:
+          CTP_CLIENT_ID: ${{ secrets.CTP_CLIENT_ID }}
+          CTP_CLIENT_SECRET: ${{ secrets.CTP_CLIENT_SECRET }}
+          CTP_SCOPES: ${{ secrets.CTP_SCOPES }}
+          EXTENSION_AUTH_SECRET: ${{ secrets.EXTENSION_AUTH_SECRET }}
+          SERVICE_PUBLIC_URL: ${{ secrets.SERVICE_PUBLIC_URL }}
+        run: |
+          commercetools connect deployment redeploy \
+            --id "$CT_DEPLOYMENT_ID" \
+            --updateConnector \
+            --configuration "service.CTP_PROJECT_KEY=$CTP_PROJECT_KEY" \
+            --configuration "service.CTP_AUTH_URL=$CTP_AUTH_URL" \
+            --configuration "service.CTP_API_URL=$CTP_API_URL" \
+            --configuration "service.CTP_SCOPES=$CTP_SCOPES" \
+            --configuration "service.SERVICE_PUBLIC_URL=$SERVICE_PUBLIC_URL" \
+            --configuration "service.CTP_CLIENT_ID=$CTP_CLIENT_ID" \
+            --configuration "service.CTP_CLIENT_SECRET=$CTP_CLIENT_SECRET" \
+            --configuration "service.EXTENSION_AUTH_SECRET=$EXTENSION_AUTH_SECRET"
+
+      - name: Confirm the deployment is healthy
+        run: |
+          commercetools connect deployment describe --id "$CT_DEPLOYMENT_ID"
