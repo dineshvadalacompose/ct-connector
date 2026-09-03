@@ -44,13 +44,38 @@ an API Extension against a real commercetools project - see
   request to `POST /service` must carry an `Authorization` header matching the
   `EXTENSION_AUTH_SECRET` value, which stops random callers but is not a full
   authentication system.
-- This project has not been deployed through commercetools Connect's own
-  hosting. Today, connecting it to a real commercetools project means running
-  it locally and exposing it with a temporary public tunnel, not a production
-  deployment.
+- The connector and its deployment were both created without a human-readable
+  "key" (only an internal id), so `.github/workflows/deploy-connector.yml`
+  targets them by id. Fine as-is, but worth giving both a real key if this
+  project is ever recreated from scratch.
 
 ## Continuous integration
 
 Every push and pull request runs a GitHub Actions workflow
 (`.github/workflows/ci.yml`) that installs dependencies, builds, and runs the
 test suite for the service.
+
+## How to release
+
+This project is deployed through commercetools Connect's own hosting - no
+local tunnel needed for real use. Shipping a change is a normal commit/push,
+plus one extra step to actually make it go live:
+
+1. Make your changes, commit, and push to `main` as usual. This alone does
+   **not** touch the live service - pushing to `main` only runs the CI checks
+   above.
+2. Decide a version number for the release: bump the last number for a small
+   fix (`v1.2.2` -> `v1.2.3`), the middle number for a new feature (`v1.2.3`
+   -> `v1.3.0`).
+3. Create and push a version tag - this is the step that actually ships it:
+   ```
+   git tag -a v1.2.3 -m "short description of what changed"
+   git push origin v1.2.3
+   ```
+4. Pushing a tag matching `v*` triggers
+   `.github/workflows/deploy-connector.yml`, which publishes that tagged code
+   to the connector and redeploys the running instance with
+   `--updateConnector` so it actually picks up the new version. Watch its
+   progress under the repo's **Actions** tab.
+5. Once it's green, the live service is running the new code. Worth
+   double-checking with a real request if the change is significant.
