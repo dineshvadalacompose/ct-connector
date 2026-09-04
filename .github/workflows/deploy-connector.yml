@@ -24,7 +24,7 @@ on:
 env:
   CT_REGION: australia-southeast1.gcp
   CT_CONNECTOR_ID: a2338975-16d5-471c-ae97-b3cdf1ac69b4
-  CT_DEPLOYMENT_ID: f0a7c1e2-98d5-4a4d-97a6-1206c117ed80
+  CT_DEPLOYMENT_ID: 290c5ca8-3f4b-435e-9f09-b5806180c421
   CTP_PROJECT_KEY: ct-connector
   CTP_AUTH_URL: https://auth.australia-southeast1.gcp.commercetools.com
   CTP_API_URL: https://api.australia-southeast1.gcp.commercetools.com
