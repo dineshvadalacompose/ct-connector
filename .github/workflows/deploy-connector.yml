@@ -74,7 +74,7 @@ jobs:
           # CT_CLI_* being separate from both: least privilege per concern.
           EVENT_CTP_CLIENT_ID: ${{ secrets.EVENT_CTP_CLIENT_ID }}
           EVENT_CTP_CLIENT_SECRET: ${{ secrets.EVENT_CTP_CLIENT_SECRET }}
-          EVENT_PUBLIC_URL: ${{ secrets.EVENT_PUBLIC_URL }}
+          QSTASH_DESTINATION_URL: ${{ secrets.QSTASH_DESTINATION_URL }}
           QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
         # CTP_SCOPES is deliberately NOT passed for the service app: the commercetools CLI's own
         # --configuration value parser rejects any value containing a space
@@ -102,7 +102,7 @@ jobs:
             --configuration "event.CTP_SCOPES=manage_subscriptions:$CTP_PROJECT_KEY" \
             --configuration "event.CTP_CLIENT_ID=$EVENT_CTP_CLIENT_ID" \
             --configuration "event.CTP_CLIENT_SECRET=$EVENT_CTP_CLIENT_SECRET" \
-            --configuration "event.EVENT_PUBLIC_URL=$EVENT_PUBLIC_URL" \
+            --configuration "event.QSTASH_DESTINATION_URL=$QSTASH_DESTINATION_URL" \
             --configuration "event.QSTASH_TOKEN=$QSTASH_TOKEN"
 
       - name: Confirm the deployment is healthy
