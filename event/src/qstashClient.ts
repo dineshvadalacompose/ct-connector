@@ -1,6 +1,8 @@
 // Forwards decoded notifications to Upstash QStash, which reliably delivers them (with its own
-// retries) via HTTP POST back to this app's own public /event endpoint. Uses the global `fetch`
-// available in Node 24 - no HTTP client dependency needed.
+// retries) via HTTP POST to QSTASH_DESTINATION_URL - a separate small proof app
+// (github.com/dineshvadalacompose/qstash-receiver) that stores and displays what it receives,
+// so delivery can be visually confirmed rather than only inferred from this app's own logs.
+// Uses the global `fetch` available in Node 24 - no HTTP client dependency needed.
 //
 // QSTASH_BASE_URL: QStash's regions each have their own endpoint, and a token only works against
 // its own account's home region (confirmed against a live account - the generic
@@ -13,11 +15,10 @@
 // remainder of the path to be the literal destination URL.
 
 export async function publishToQstash(payload: unknown): Promise<void> {
-  const publicUrl = process.env.EVENT_PUBLIC_URL;
+  const destinationUrl = process.env.QSTASH_DESTINATION_URL;
   const token = process.env.QSTASH_TOKEN;
   const baseUrl = process.env.QSTASH_BASE_URL || 'https://qstash-us-east-1.upstash.io';
 
-  const destinationUrl = `${publicUrl}/event`;
   const response = await fetch(`${baseUrl}/v2/publish/${destinationUrl}`, {
     method: 'POST',
     headers: {

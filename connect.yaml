@@ -55,8 +55,8 @@ deployAs:
         - key: CTP_SCOPES
           description: Space-separated scopes of an API Client (needs manage_subscriptions)
           required: true
-        - key: EVENT_PUBLIC_URL
-          description: The public URL commercetools Connect assigned this deployment (shown on the deployment's Overview screen after first deploy, e.g. https://event-xxxx.<region>.gcp.<n>.sandbox.commercetools.app). Used as the QStash forwarding destination for decoded events.
+        - key: QSTASH_DESTINATION_URL
+          description: The URL QStash delivers forwarded events to - the /api/receive endpoint of the separate qstash-receiver proof app (github.com/dineshvadalacompose/qstash-receiver), e.g. https://qstash-receiver-phi.vercel.app/api/receive.
           required: true
       securedConfiguration:
         - key: CTP_CLIENT_ID

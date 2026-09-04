@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/server';
 
-const ENV_KEYS = ['EVENT_PUBLIC_URL', 'QSTASH_TOKEN'];
+const ENV_KEYS = ['QSTASH_DESTINATION_URL', 'QSTASH_TOKEN'];
 
 function buildEnvelope(notification: unknown) {
   const data = Buffer.from(JSON.stringify(notification), 'utf-8').toString('base64');
@@ -23,7 +23,7 @@ describe('POST /event', () => {
     for (const key of ENV_KEYS) {
       originalEnv[key] = process.env[key];
     }
-    process.env.EVENT_PUBLIC_URL = 'https://event-xxxx.example.gcp.sandbox.commercetools.app';
+    process.env.QSTASH_DESTINATION_URL = 'https://qstash-receiver-phi.vercel.app/api/receive';
     process.env.QSTASH_TOKEN = 'test-qstash-token';
   });
 
@@ -52,7 +52,7 @@ describe('POST /event', () => {
     expect(response.status).toBe(204);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
-    const expectedDestination = 'https://event-xxxx.example.gcp.sandbox.commercetools.app/event';
+    const expectedDestination = 'https://qstash-receiver-phi.vercel.app/api/receive';
     expect(url).toBe(`https://qstash-us-east-1.upstash.io/v2/publish/${expectedDestination}`);
     expect(options).toMatchObject({
       method: 'POST',

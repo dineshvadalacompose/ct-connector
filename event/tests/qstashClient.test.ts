@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { publishToQstash } from '../src/qstashClient';
 
-const ENV_KEYS = ['EVENT_PUBLIC_URL', 'QSTASH_TOKEN'];
+const ENV_KEYS = ['QSTASH_DESTINATION_URL', 'QSTASH_TOKEN'];
 
 describe('publishToQstash', () => {
   const originalEnv: Record<string, string | undefined> = {};
@@ -10,7 +10,7 @@ describe('publishToQstash', () => {
     for (const key of ENV_KEYS) {
       originalEnv[key] = process.env[key];
     }
-    process.env.EVENT_PUBLIC_URL = 'https://event-xxxx.example.gcp.sandbox.commercetools.app';
+    process.env.QSTASH_DESTINATION_URL = 'https://qstash-receiver-phi.vercel.app/api/receive';
     process.env.QSTASH_TOKEN = 'test-qstash-token';
   });
 
@@ -34,7 +34,7 @@ describe('publishToQstash', () => {
 
     // Confirmed against a live QStash account: the destination URL is appended raw, not
     // percent-encoded (an encoded URL is rejected with "endpoint has invalid scheme").
-    const expectedDestination = 'https://event-xxxx.example.gcp.sandbox.commercetools.app/event';
+    const expectedDestination = 'https://qstash-receiver-phi.vercel.app/api/receive';
     expect(url).toBe(`https://qstash-us-east-1.upstash.io/v2/publish/${expectedDestination}`);
     expect(options).toMatchObject({
       method: 'POST',
