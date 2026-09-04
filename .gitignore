@@ -1,6 +1,3 @@
-service/node_modules/
-service/dist/
-service/.env
 event/node_modules/
 event/dist/
 event/.env
