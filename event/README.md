@@ -42,6 +42,18 @@ with a hand-crafted request, not a real end-to-end delivery from commercetools. 
 Product event flow through, you need to deploy this connector for real and then create or update a
 product in that commercetools project.
 
+## Forwarding events to QStash
+
+Besides logging every decoded event, this app also forwards it to Upstash QStash, which delivers
+it (with its own retries) back to this same deployment's own public address. This requires two
+settings: `EVENT_PUBLIC_URL` (this deployment's own public address, used as the forwarding
+destination) and `QSTASH_TOKEN` (the credential used to talk to QStash). Decoding and forwarding
+fail differently on purpose: a message that fails to decode will never decode successfully no
+matter how many times it's retried, so it's still acknowledged (204) and just logged as an error.
+But if forwarding to QStash fails, that's likely a temporary hiccup, so the app responds with an
+error status instead, which tells commercetools to redeliver the same message later for another
+attempt.
+
 ## What's not done yet
 
 Unlike `service/`'s `POST /service` (which requires a shared secret in the `Authorization`
@@ -51,3 +63,15 @@ Pub/Sub push subscriptions support an optional OIDC token the endpoint could ver
 request actually came from Pub/Sub - not implemented here, since this app's job is currently only
 to log what it receives rather than act on it. Worth adding before this endpoint is ever trusted
 to trigger a real side effect (sending an email, writing to a database, etc).
+
+The retry-on-forward-failure choice treats every QStash error the same way (redeliver later). A
+genuinely permanent problem - a revoked `QSTASH_TOKEN`, or QStash rejecting the destination URL -
+gets the same treatment as a brief network hiccup, so it would keep redelivering and re-failing
+the same notification indefinitely rather than giving up after a permanent failure is confirmed.
+Fine for now; would need distinguishing before this handles real traffic at any volume.
+
+This design can also forward the same notification to QStash more than once: if the forward
+request actually reaches QStash and succeeds, but the response is lost before this app sees it
+(a dropped connection), this app still reports a failure, commercetools redelivers the original
+message, and it gets forwarded again. QStash's own delivery guarantee is at-least-once for the
+same reason - this app just inherits that property rather than adding deduplication on top of it.

@@ -55,10 +55,16 @@ deployAs:
         - key: CTP_SCOPES
           description: Space-separated scopes of an API Client (needs manage_subscriptions)
           required: true
+        - key: EVENT_PUBLIC_URL
+          description: The public URL commercetools Connect assigned this deployment (shown on the deployment's Overview screen after first deploy, e.g. https://event-xxxx.<region>.gcp.<n>.sandbox.commercetools.app). Used as the QStash forwarding destination for decoded events.
+          required: true
       securedConfiguration:
         - key: CTP_CLIENT_ID
           description: client_id of an API Client
           required: true
         - key: CTP_CLIENT_SECRET
           description: secret of an API Client
+          required: true
+        - key: QSTASH_TOKEN
+          description: Bearer token for Upstash QStash, used to forward decoded events for reliable delivery.
           required: true
