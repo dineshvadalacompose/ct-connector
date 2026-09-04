@@ -69,11 +69,20 @@ jobs:
           CTP_CLIENT_SECRET: ${{ secrets.CTP_CLIENT_SECRET }}
           EXTENSION_AUTH_SECRET: ${{ secrets.EXTENSION_AUTH_SECRET }}
           SERVICE_PUBLIC_URL: ${{ secrets.SERVICE_PUBLIC_URL }}
-        # CTP_SCOPES is deliberately NOT passed here: the commercetools CLI's own
+          # Dedicated, narrowly-scoped credential for the event app (Manage Subscriptions only)
+          # - separate from the service app's own CTP_CLIENT_ID/SECRET above, same reasoning as
+          # CT_CLI_* being separate from both: least privilege per concern.
+          EVENT_CTP_CLIENT_ID: ${{ secrets.EVENT_CTP_CLIENT_ID }}
+          EVENT_CTP_CLIENT_SECRET: ${{ secrets.EVENT_CTP_CLIENT_SECRET }}
+        # CTP_SCOPES is deliberately NOT passed for the service app: the commercetools CLI's own
         # --configuration value parser rejects any value containing a space
-        # (/^[^\s]+$/ in @commercetools/cli-topic-connect's config-value-flag.parser.js),
-        # and scope strings are inherently space-separated. Scopes don't change between
-        # deploys anyway, so the value already stored on the deployment is left as-is.
+        # (/^[^\s]+$/ in @commercetools/cli-topic-connect's config-value-flag.parser.js), and the
+        # service app's scope string is space-separated (two scopes). Scopes don't change between
+        # deploys anyway, so its already-stored value is left as-is.
+        #
+        # The event app's scope is passed below (as event.CTP_SCOPES) specifically because it's
+        # a SINGLE scope with no space (manage_subscriptions:ct-connector) - safe for this
+        # parser, and needed since this app has no previously-stored config to fall back to yet.
         run: |
           commercetools connect deployment redeploy \
             --id "$CT_DEPLOYMENT_ID" \
@@ -84,7 +93,13 @@ jobs:
             --configuration "service.SERVICE_PUBLIC_URL=$SERVICE_PUBLIC_URL" \
             --configuration "service.CTP_CLIENT_ID=$CTP_CLIENT_ID" \
             --configuration "service.CTP_CLIENT_SECRET=$CTP_CLIENT_SECRET" \
-            --configuration "service.EXTENSION_AUTH_SECRET=$EXTENSION_AUTH_SECRET"
+            --configuration "service.EXTENSION_AUTH_SECRET=$EXTENSION_AUTH_SECRET" \
+            --configuration "event.CTP_PROJECT_KEY=$CTP_PROJECT_KEY" \
+            --configuration "event.CTP_AUTH_URL=$CTP_AUTH_URL" \
+            --configuration "event.CTP_API_URL=$CTP_API_URL" \
+            --configuration "event.CTP_SCOPES=manage_subscriptions:$CTP_PROJECT_KEY" \
+            --configuration "event.CTP_CLIENT_ID=$EVENT_CTP_CLIENT_ID" \
+            --configuration "event.CTP_CLIENT_SECRET=$EVENT_CTP_CLIENT_SECRET"
 
       - name: Confirm the deployment is healthy
         run: |
