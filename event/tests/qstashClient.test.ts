@@ -21,7 +21,7 @@ describe('publishToQstash', () => {
     vi.restoreAllMocks();
   });
 
-  it('publishes the payload to QStash with the correctly encoded destination URL, headers, and body', async () => {
+  it('publishes the payload to QStash with the raw (unencoded) destination URL, headers, and body', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -32,8 +32,10 @@ describe('publishToQstash', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
 
-    const expectedDestination = encodeURIComponent('https://event-xxxx.example.gcp.sandbox.commercetools.app/event');
-    expect(url).toBe(`https://qstash.upstash.io/v2/publish/${expectedDestination}`);
+    // Confirmed against a live QStash account: the destination URL is appended raw, not
+    // percent-encoded (an encoded URL is rejected with "endpoint has invalid scheme").
+    const expectedDestination = 'https://event-xxxx.example.gcp.sandbox.commercetools.app/event';
+    expect(url).toBe(`https://qstash-us-east-1.upstash.io/v2/publish/${expectedDestination}`);
     expect(options).toMatchObject({
       method: 'POST',
       headers: {

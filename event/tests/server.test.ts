@@ -52,8 +52,8 @@ describe('POST /event', () => {
     expect(response.status).toBe(204);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
-    const expectedDestination = encodeURIComponent('https://event-xxxx.example.gcp.sandbox.commercetools.app/event');
-    expect(url).toBe(`https://qstash.upstash.io/v2/publish/${expectedDestination}`);
+    const expectedDestination = 'https://event-xxxx.example.gcp.sandbox.commercetools.app/event';
+    expect(url).toBe(`https://qstash-us-east-1.upstash.io/v2/publish/${expectedDestination}`);
     expect(options).toMatchObject({
       method: 'POST',
       headers: {
