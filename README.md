@@ -46,11 +46,10 @@ Testing the full Subscription-delivery flow requires a real deployment - see
   destination) gets retried indefinitely rather than failing fast, and a lost response
   after a successful QStash accept can cause a duplicate forward. See `event/README.md`
   for the full reasoning.
-- The connector and its deployment were both created without a human-readable "key" (only
-  an internal id) for the original `service`+`event` deployment; the current `event`-only
-  deployment (recreated after removing `service`) does have a real key
-  (`ct-connector-sandbox`), but the connector itself still doesn't. Worth giving it one if
-  this project is ever recreated from scratch.
+- The original `service`+`event` deployment was created without a human-readable "key"
+  (only an internal id). The current `event`-only deployment (recreated after removing
+  `service`) does have a real key (`ct-connector-events`), but the connector itself still
+  doesn't. Worth giving it one if this project is ever recreated from scratch.
 
 ## Continuous integration
 
