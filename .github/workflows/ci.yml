@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  event:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -17,6 +17,30 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: event/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  console:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: console
+    # custom-application-config.mjs fails the build loudly if these are unset (by design - they're
+    # meant to be injected by commercetools Connect at real deploy time). CI supplies harmless
+    # placeholder values purely so the build itself can be exercised here.
+    env:
+      CLOUD_IDENTIFIER: gcp-au
+      CUSTOM_APPLICATION_ID: ci-placeholder-app-id
+      APPLICATION_URL: https://ci-placeholder.example.com
+      ENTRY_POINT_URI_PATH: event-relay-console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: console/package-lock.json
       - run: npm ci
       - run: npm run build
       - run: npm test

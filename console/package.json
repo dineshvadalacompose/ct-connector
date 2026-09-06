@@ -1,0 +1,30 @@
+{
+  "name": "ct-connector-console",
+  "version": "1.0.0",
+  "private": true,
+  "description": "commercetools Connect Merchant Center Custom Application - minimal placeholder proving this deployment type works",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "start": "serve ./public -p 8080 --config serve.json",
+    "start:dev": "mc-scripts start",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=512 mc-scripts build",
+    "compile-html": "mc-scripts compile-html",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@commercetools-frontend/application-shell": "27.9.6",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "serve": "^14.2.6"
+  },
+  "devDependencies": {
+    "@commercetools-frontend/mc-scripts": "27.9.6",
+    "cross-env": "^7.0.3",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.3",
+    "typescript": "^5.5.3",
+    "vitest": "^4.1.11"
+  }
+}

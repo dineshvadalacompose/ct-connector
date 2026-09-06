@@ -1,3 +1,6 @@
 event/node_modules/
 event/dist/
 event/.env
+console/node_modules/
+console/public/
+console/.env

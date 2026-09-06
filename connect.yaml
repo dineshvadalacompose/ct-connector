@@ -35,3 +35,17 @@ deployAs:
         - key: QSTASH_TOKEN
           description: Bearer token for Upstash QStash, used to forward decoded events for reliable delivery.
           required: true
+
+  - name: console
+    applicationType: merchant-center-custom-application
+    configuration:
+      standardConfiguration:
+        - key: CUSTOM_APPLICATION_ID
+          description: The registered Custom Application's ID from Merchant Center (Organization > Custom Applications).
+          required: true
+        - key: ENTRY_POINT_URI_PATH
+          description: Must match the entry point path registered for this Custom Application in Merchant Center (event-relay-console) - this value cannot be changed after registration.
+          required: true
+        - key: CLOUD_IDENTIFIER
+          description: The Merchant Center cloud/region short code this project's Custom Applications run in (e.g. gcp-au for Australia/GCP). Required by Connect's own connector-specification validation for this application type - a deploy is rejected outright if this is missing.
+          required: true
