@@ -8,6 +8,23 @@ name: auto-tag
 # minor/major bump is a human judgment call, not something safe to infer automatically,
 # so that stays a manual decision (create a minor/major tag by hand when needed).
 
+# IMPORTANT - why this workflow needs a Personal Access Token (PAT), not just GITHUB_TOKEN:
+# GitHub Actions deliberately does NOT let a push made with the automatic GITHUB_TOKEN trigger
+# other workflows (this stops infinite workflow-triggering-workflow loops). This workflow's
+# entire job is to push a tag that starts deploy-connector.yml (its `on: push: tags: - "v*"`
+# trigger) - so if the tag push here is authenticated with GITHUB_TOKEN, the tag gets created
+# fine but deploy-connector.yml silently never runs. Confirmed this is exactly what happened on
+# 2026-09-07: tag v2.3.1 was pushed successfully by this workflow, but zero deploy-connector.yml
+# runs were recorded for it.
+#
+# The fix is to authenticate with a PAT (`WORKFLOW_PAT` secret) instead, since GitHub explicitly
+# exempts PAT-authenticated pushes from this restriction. Do NOT "simplify" this back to
+# GITHUB_TOKEN later - it will silently break the deploy trigger again with no visible error.
+#
+# WORKFLOW_PAT must be created by hand in GitHub repo Settings > Secrets and needs push access
+# to this repo: either a classic PAT with the "repo" scope, or a fine-grained PAT with
+# "Contents: Read and write" permission scoped to this repository.
+
 on:
   push:
     branches:
@@ -19,11 +36,25 @@ permissions:
 jobs:
   tag:
     runs-on: ubuntu-latest
+    env:
+      # Secrets can't be read directly in a step's `if:` - map it to an env var first
+      # (GitHub's own documented way to do this) so the warning step below can check it.
+      workflow_pat_set: ${{ secrets.WORKFLOW_PAT != '' }}
     steps:
       - name: Checkout with full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # need all existing tags to find the latest one
+          # Falls back to the default GITHUB_TOKEN if WORKFLOW_PAT isn't set yet, so the tag
+          # still gets created either way. But until WORKFLOW_PAT is actually set as a repo
+          # secret, deploy-connector.yml will NOT be triggered by the resulting tag push (see
+          # the note above) - the fallback only prevents this workflow itself from failing.
+          token: ${{ secrets.WORKFLOW_PAT || github.token }}
+
+      - name: Warn if WORKFLOW_PAT isn't set
+        if: ${{ env.workflow_pat_set == 'false' }}
+        run: |
+          echo "::warning::WORKFLOW_PAT secret is not set. The tag this run creates will NOT trigger deploy-connector.yml (GITHUB_TOKEN-authenticated pushes can't trigger other workflows). Add a WORKFLOW_PAT repo secret (see the comment at the top of this file) so deployments actually run automatically."
 
       - name: Compute next patch version and push tag
         run: |
