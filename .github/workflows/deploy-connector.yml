@@ -23,7 +23,7 @@ on:
 env:
   CT_REGION: australia-southeast1.gcp
   CT_CONNECTOR_ID: a2338975-16d5-471c-ae97-b3cdf1ac69b4
-  CT_DEPLOYMENT_ID: a65b6589-1d69-4406-a1ed-f273383292e3
+  CT_DEPLOYMENT_ID: f6190c69-c7c7-4506-a8c8-662c0c488dc0
   CTP_PROJECT_KEY: ct-connector
   CTP_AUTH_URL: https://auth.australia-southeast1.gcp.commercetools.com
   CTP_API_URL: https://api.australia-southeast1.gcp.commercetools.com
@@ -83,7 +83,10 @@ jobs:
             --configuration "event.CTP_CLIENT_ID=$EVENT_CTP_CLIENT_ID" \
             --configuration "event.CTP_CLIENT_SECRET=$EVENT_CTP_CLIENT_SECRET" \
             --configuration "event.QSTASH_DESTINATION_URL=$QSTASH_DESTINATION_URL" \
-            --configuration "event.QSTASH_TOKEN=$QSTASH_TOKEN"
+            --configuration "event.QSTASH_TOKEN=$QSTASH_TOKEN" \
+            --configuration "console.CUSTOM_APPLICATION_ID=cmtp7hsef000101vpkaqn40e7" \
+            --configuration "console.ENTRY_POINT_URI_PATH=event-relay-console" \
+            --configuration "console.CLOUD_IDENTIFIER=gcp-au"
 
       - name: Confirm the deployment is healthy
         run: |
