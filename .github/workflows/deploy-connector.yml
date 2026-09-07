@@ -11,9 +11,15 @@ name: deploy-connector
 #     already used for local/manual deploys), passed through so the redeploy step can keep the
 #     running deployment correctly configured.
 #
-# CONNECTOR_ID and DEPLOYMENT_ID identify this specific connector/deployment in this specific
-# commercetools project. Neither is sensitive (they're not credentials), so they're plain values
-# here rather than GitHub secrets.
+# CT_CONNECTOR_ID identifies the connector itself - stable, never changes, not a credential.
+#
+# CT_DEPLOYMENT_KEY (not an ID): the deployment gets referenced by its own chosen key
+# (ct-connector-main), not its internal id. This matters specifically because of the recreate
+# step below - a deployment's set of apps is fixed at creation (confirmed the hard way twice:
+# adding console to an event-only deployment, and later adding it to a service+event
+# deployment, both required deleting and recreating the deployment, which assigns a brand-new
+# internal id each time). Referencing it by a stable key means this workflow keeps working
+# across a recreate without needing a human to notice the id changed and edit this file.
 
 on:
   push:
@@ -23,7 +29,7 @@ on:
 env:
   CT_REGION: australia-southeast1.gcp
   CT_CONNECTOR_ID: a2338975-16d5-471c-ae97-b3cdf1ac69b4
-  CT_DEPLOYMENT_ID: f6190c69-c7c7-4506-a8c8-662c0c488dc0
+  CT_DEPLOYMENT_KEY: ct-connector-main
   CTP_PROJECT_KEY: ct-connector
   CTP_AUTH_URL: https://auth.australia-southeast1.gcp.commercetools.com
   CTP_API_URL: https://api.australia-southeast1.gcp.commercetools.com
@@ -62,7 +68,7 @@ jobs:
         run: |
           commercetools connect connectorstaged publish --id "$CT_CONNECTOR_ID"
 
-      - name: Redeploy with the newly published version
+      - name: Redeploy, or recreate if a new app was added
         env:
           EVENT_CTP_CLIENT_ID: ${{ secrets.EVENT_CTP_CLIENT_ID }}
           EVENT_CTP_CLIENT_SECRET: ${{ secrets.EVENT_CTP_CLIENT_SECRET }}
@@ -72,10 +78,55 @@ jobs:
         # safe to pass directly - the commercetools CLI's own --configuration value parser
         # rejects any value containing a space (/^[^\s]+$/ in
         # @commercetools/cli-topic-connect's config-value-flag.parser.js).
+        #
+        # SELF-HEALING RECREATE: a plain redeploy fails with the message "does not include
+        # application" if connect.yaml gained a NEW app since this deployment was created - a
+        # deployment's app set is fixed at creation, confirmed twice already this session.
+        # Rather than trying to predict this in advance (parsing the deployment's current app
+        # list is fragile and this script runs unattended with real delete/create power - the
+        # platform's own error is the trustworthy signal here, not our own guess), this step
+        # tries the normal path first and only falls back to delete+recreate for this ONE
+        # specific, recognized failure. Any other failure is left to fail the job loudly rather
+        # than risk recreating for an unrelated reason.
         run: |
-          commercetools connect deployment redeploy \
-            --id "$CT_DEPLOYMENT_ID" \
+          set +e
+          OUTPUT=$(commercetools connect deployment redeploy \
+            --key "$CT_DEPLOYMENT_KEY" \
             --updateConnector \
+            --configuration "event.CTP_PROJECT_KEY=$CTP_PROJECT_KEY" \
+            --configuration "event.CTP_AUTH_URL=$CTP_AUTH_URL" \
+            --configuration "event.CTP_API_URL=$CTP_API_URL" \
+            --configuration "event.CTP_SCOPES=manage_subscriptions:$CTP_PROJECT_KEY" \
+            --configuration "event.CTP_CLIENT_ID=$EVENT_CTP_CLIENT_ID" \
+            --configuration "event.CTP_CLIENT_SECRET=$EVENT_CTP_CLIENT_SECRET" \
+            --configuration "event.QSTASH_DESTINATION_URL=$QSTASH_DESTINATION_URL" \
+            --configuration "event.QSTASH_TOKEN=$QSTASH_TOKEN" \
+            --configuration "console.CUSTOM_APPLICATION_ID=cmtp7hsef000101vpkaqn40e7" \
+            --configuration "console.ENTRY_POINT_URI_PATH=event-relay-console" \
+            --configuration "console.CLOUD_IDENTIFIER=gcp-au" 2>&1)
+          EXIT_CODE=$?
+          set -e
+          echo "$OUTPUT"
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "Redeployed successfully."
+            exit 0
+          fi
+
+          if ! echo "$OUTPUT" | grep -q "does not include application"; then
+            echo "::error::Redeploy failed for a reason this workflow doesn't recognize as the known 'new app added' case. Not attempting a recreate - failing closed."
+            exit $EXIT_CODE
+          fi
+
+          echo "This deployment doesn't yet include a newly-added app. Recreating it with the same key ($CT_DEPLOYMENT_KEY) so this workflow keeps working unchanged afterward..."
+
+          printf 'y\n' | commercetools connect deployment delete --key "$CT_DEPLOYMENT_KEY"
+
+          commercetools connect deployment create \
+            --region "$CT_REGION" \
+            --connector-id "$CT_CONNECTOR_ID" \
+            --key "$CT_DEPLOYMENT_KEY" \
+            --type sandbox \
             --configuration "event.CTP_PROJECT_KEY=$CTP_PROJECT_KEY" \
             --configuration "event.CTP_AUTH_URL=$CTP_AUTH_URL" \
             --configuration "event.CTP_API_URL=$CTP_API_URL" \
@@ -88,6 +139,8 @@ jobs:
             --configuration "console.ENTRY_POINT_URI_PATH=event-relay-console" \
             --configuration "console.CLOUD_IDENTIFIER=gcp-au"
 
+          echo "::warning::This deployment was recreated (a new app was added). Its assigned addresses may have changed - check the deployment's Overview screen. The console app's Custom Application registration in Merchant Center may need its Application URL field updated by hand if console's own address changed (that field isn't reachable via this CLI)."
+
       - name: Confirm the deployment is healthy
         run: |
-          commercetools connect deployment describe --id "$CT_DEPLOYMENT_ID"
+          commercetools connect deployment describe --key "$CT_DEPLOYMENT_KEY"
