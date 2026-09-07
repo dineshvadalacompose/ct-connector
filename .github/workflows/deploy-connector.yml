@@ -20,6 +20,8 @@ name: deploy-connector
 # deployment, both required deleting and recreating the deployment, which assigns a brand-new
 # internal id each time). Referencing it by a stable key means this workflow keeps working
 # across a recreate without needing a human to notice the id changed and edit this file.
+#
+# Tags are now created automatically by auto-tag.yml on every push to main, instead of by hand.
 
 on:
   push:

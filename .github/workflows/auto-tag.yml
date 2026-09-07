@@ -1,0 +1,56 @@
+name: auto-tag
+
+# Removes the manual "git tag vX.Y.Z && git push origin vX.Y.Z" step per Phani's request:
+# every push to main now creates and pushes the next version tag itself, which in turn
+# triggers deploy-connector.yml automatically (no changes needed there).
+#
+# Only bumps the PATCH number (vX.Y.Z -> vX.Y.(Z+1)). Deciding when a change deserves a
+# minor/major bump is a human judgment call, not something safe to infer automatically,
+# so that stays a manual decision (create a minor/major tag by hand when needed).
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write # needed to push the new tag
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need all existing tags to find the latest one
+
+      - name: Compute next patch version and push tag
+        run: |
+          set -euo pipefail
+
+          # Find the latest vX.Y.Z tag reachable from history; sort by version so we
+          # don't just pick whatever was created most recently by clock time.
+          latest_tag=$(git tag --list 'v*.*.*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)
+
+          if [ -z "$latest_tag" ]; then
+            # No existing tag: start at a sane default.
+            new_tag="v0.1.0"
+          else
+            version="${latest_tag#v}"
+            major="${version%%.*}"
+            rest="${version#*.}"
+            minor="${rest%%.*}"
+            patch="${rest#*.}"
+            new_tag="v${major}.${minor}.$((patch + 1))"
+          fi
+
+          echo "Latest tag: ${latest_tag:-<none>}"
+          echo "New tag: $new_tag"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Push only the tag - never the branch itself.
+          git tag "$new_tag"
+          git push origin "$new_tag"
