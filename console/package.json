@@ -15,12 +15,12 @@
   },
   "dependencies": {
     "@commercetools-frontend/application-shell": "27.9.6",
+    "@commercetools-frontend/mc-scripts": "27.9.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "serve": "^14.2.6"
   },
   "devDependencies": {
-    "@commercetools-frontend/mc-scripts": "27.9.6",
     "cross-env": "^7.0.3",
     "@types/react": "^19.0.3",
     "@types/react-dom": "^19.0.3",
